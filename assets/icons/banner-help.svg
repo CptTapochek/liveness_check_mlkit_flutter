@@ -1,0 +1,18 @@
+<svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clip-path="url(#clip0_1967_2589)">
+        <path d="M12 22.5C17.5228 22.5 22 18.0228 22 12.5C22 6.97715 17.5228 2.5 12 2.5C6.47715 2.5 2 6.97715 2 12.5C2 18.0228 6.47715 22.5 12 22.5Z" stroke="#8C8C8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 22.5C17.5228 22.5 22 18.0228 22 12.5C22 6.97715 17.5228 2.5 12 2.5C6.47715 2.5 2 6.97715 2 12.5C2 18.0228 6.47715 22.5 12 22.5Z" stroke="#2E2E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:hard-light"/>
+        <path d="M12 22.5C17.5228 22.5 22 18.0228 22 12.5C22 6.97715 17.5228 2.5 12 2.5C6.47715 2.5 2 6.97715 2 12.5C2 18.0228 6.47715 22.5 12 22.5Z" stroke="#3DB0E4" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:screen"/>
+        <path d="M9.09 9.50008C9.3251 8.83175 9.78915 8.26819 10.4 7.90921C11.0108 7.55024 11.7289 7.41902 12.4272 7.53879C13.1255 7.65857 13.7588 8.02161 14.2151 8.56361C14.6713 9.10561 14.9211 9.7916 14.92 10.5001C14.92 12.5001 11.92 13.5001 11.92 13.5001" stroke="#8C8C8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.09 9.50008C9.3251 8.83175 9.78915 8.26819 10.4 7.90921C11.0108 7.55024 11.7289 7.41902 12.4272 7.53879C13.1255 7.65857 13.7588 8.02161 14.2151 8.56361C14.6713 9.10561 14.9211 9.7916 14.92 10.5001C14.92 12.5001 11.92 13.5001 11.92 13.5001" stroke="#2E2E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:hard-light"/>
+        <path d="M9.09 9.50008C9.3251 8.83175 9.78915 8.26819 10.4 7.90921C11.0108 7.55024 11.7289 7.41902 12.4272 7.53879C13.1255 7.65857 13.7588 8.02161 14.2151 8.56361C14.6713 9.10561 14.9211 9.7916 14.92 10.5001C14.92 12.5001 11.92 13.5001 11.92 13.5001" stroke="#3DB0E4" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:screen"/>
+        <path d="M12 17.5H12.01" stroke="#8C8C8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 17.5H12.01" stroke="#2E2E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:hard-light"/>
+        <path d="M12 17.5H12.01" stroke="#3DB0E4" stroke-opacity="0.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:screen"/>
+    </g>
+    <defs>
+        <clipPath id="clip0_1967_2589">
+            <rect width="24" height="24" fill="white" transform="translate(0 0.5)"/>
+        </clipPath>
+    </defs>
+</svg>
