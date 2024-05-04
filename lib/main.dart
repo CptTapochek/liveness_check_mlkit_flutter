@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/biometric_verification.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/liveness.dart';
 import 'package:next_vision_flutter_app/src/constants/size.dart';
 
 
@@ -40,7 +40,7 @@ class Home extends StatelessWidget {
               child: Column(
                 children: [
                   TextButton(
-                    onPressed: () => Get.to(const BiometricVerification()),
+                    onPressed: () => Get.to(const Liveness()),
                     child: Text(
                       "Liveness Check",
                       style: TextStyle(

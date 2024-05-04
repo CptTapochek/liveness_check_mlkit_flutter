@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/camera_view.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/components/processes/fraud_validation.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/processes/move_face_on_median_plane.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/processes/biometric_validation.dart';
 import 'package:next_vision_flutter_app/src/constants/app_bar_state.dart';
@@ -11,18 +13,18 @@ import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 
 
 
-class BiometricVerification extends StatefulWidget {
-  const BiometricVerification({
+class Liveness extends StatefulWidget {
+  const Liveness({
     Key? key,
     this.faceTrackingID = 0,
   }) : super(key: key);
   final int faceTrackingID;
 
   @override
-  State<BiometricVerification> createState() => _BiometricVerificationState();
+  State<Liveness> createState() => _LivenessState();
 }
 
-class _BiometricVerificationState extends State<BiometricVerification> {
+class _LivenessState extends State<Liveness> {
   final _imageLabeler = ImageLabeler(options: ImageLabelerOptions(confidenceThreshold: 0.25));
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
@@ -33,32 +35,42 @@ class _BiometricVerificationState extends State<BiometricVerification> {
       performanceMode: FaceDetectorMode.accurate,
     ),
   );
-  bool _canProcess = true;
-  bool _isBusy = false;
+  bool _canProcess = true, _isBusy = false;
   final bool _debugMode = kDebugMode;
   CustomPaint? _customPaint;
   double? _dxPosition = 0.0, _dyPosition = 0.0, _faceHeight = 0.0, _faceWidth = 0.0;
-  double? _rightEyeOpenProbability = 0.0, _leftEyeOpenProbability = 0.0;
-  double? _headEulerPosX = 0.0, _headEulerPosY = 0.0, _headEulerPosZ = 0.0;
+  double? _rightEyeOpenProbability = 0.0, _leftEyeOpenProbability = 0.0, eyeMovingDeviation = 0.0;
+  List<double> eyesMovingDataSet = [], headZPosDataSet = [];
+  double? _headEulerPosX = 0.0, _headEulerPosY = 0.0, _headEulerPosZ = 0.0, headZPosDeviation = 0.0;
   int? _upperLipBottomDY = 0, _lowerLipTopDY = 0;
-  Map _distanceCalibration = {"process": CurrentProcess.longDistance, "phase": CurrentPhase.initFaceDistance, "text": "", "progress": 0.0};
+  Map _distanceCalibration = {};
   int? _trackingID = 0;
   bool _errorIsActivated = false;
   bool _existFace = false;
+  bool waitingTimerStarted = false;
   String _errorText = "";
   Map fraudParams = {"mobilePhone": 0.0, "poster": 0.0};
-  int _countErrors = 0;
 
   @override
   void initState() {
+    _distanceCalibration = {
+      "process": CurrentProcess.longDistance,
+      "phase": CurrentPhase.initFaceDistance,
+      "text": "",
+      "progress": 0.0,
+      "progressIndicator": false,
+      "waitingTime": MoveFaceOnMedianPlane.waitingTime
+    };
     super.initState();
   }
 
   Future errorActivator({required bool error, required String text}) async {
     if(!_errorIsActivated && error) {
       setState(() {
-        _errorIsActivated = true;
-        _errorText = text;
+        if(mounted) {
+          _errorIsActivated = true;
+          _errorText = text;
+        }
       });
       await Future.delayed(const Duration(milliseconds: 1400), () {
         if(mounted) {
@@ -80,7 +92,8 @@ class _BiometricVerificationState extends State<BiometricVerification> {
         onImage: (inputImage) {
           processImage(inputImage);
         },
-        eyesOpenProbability: ((_rightEyeOpenProbability ?? 0.0) + (_leftEyeOpenProbability ?? 0.0)) / 2,
+        graphData: ((_rightEyeOpenProbability ?? 0.0) + (_leftEyeOpenProbability ?? 0.0)) / 2,
+        // graphData: _headEulerPosZ ?? 0.0,
         distanceCalibration: _distanceCalibration,
         customPaint: _customPaint,
         initialDirection: CameraLensDirection.front,
@@ -102,6 +115,8 @@ class _BiometricVerificationState extends State<BiometricVerification> {
           {"title":"Attack suspect", "value": fraudParams["mobilePhone"].toStringAsFixed(2)},
           {"title":"BG issues", "value": fraudParams["poster"].toStringAsFixed(2)},
           {"title":"Exist Faces", "value": _existFace},
+          {"title":"Eye moving deviation", "value": eyeMovingDeviation?.toStringAsFixed(2)},
+          {"title":"Head z pos deviation", "value": headZPosDeviation?.toStringAsFixed(2)},
         ],
       ),
     );
@@ -133,9 +148,13 @@ class _BiometricVerificationState extends State<BiometricVerification> {
         _faceWidth = face.boundingBox.width;
         _rightEyeOpenProbability = face.rightEyeOpenProbability ?? 0;
         _leftEyeOpenProbability = face.leftEyeOpenProbability ?? 0;
+        ///dataSet = ((rightEye + leftEye) / 2) * 100 -> round to 2 decimals
+        eyesMovingDataSet.add(double.parse(((((_rightEyeOpenProbability ?? 0.0) + (_leftEyeOpenProbability ?? 0.0)) / 2) * 100).toStringAsFixed(2)));
         _headEulerPosX = face.headEulerAngleX ?? 0;
         _headEulerPosY = face.headEulerAngleY ?? 0;
         _headEulerPosZ = face.headEulerAngleZ ?? 0;
+        headZPosDataSet.add(double.parse((face.headEulerAngleZ ?? 0.0).toStringAsFixed(2)));
+
         face.contours.values.forEach((element) {
           if(element != null) {
             if(element.type == FaceContourType.upperLipBottom) {
@@ -160,18 +179,18 @@ class _BiometricVerificationState extends State<BiometricVerification> {
 
         if(text == "Mobile phone") {
           fraudParams["mobilePhone"] = confidence;
-          _countErrors++;
+          ///error++
         } else {
           fraudParams["mobilePhone"] = 0.1;
         }
         if(text == "Poster") {
           fraudParams["poster"] = confidence;
-          _countErrors++;
+          ///error++
         } else {
           fraudParams["poster"] = 0.1;
         }
         if(text == "Paper" && confidence >= 0.35) {
-          _countErrors++;
+          ///error++
         }
       }
     } else if(faces.isEmpty) {
@@ -189,8 +208,22 @@ class _BiometricVerificationState extends State<BiometricVerification> {
           currentPhase: _distanceCalibration["phase"] ?? CurrentPhase.initFaceDistance,
           currentProcess: _distanceCalibration["process"] ?? CurrentProcess.longDistance,
           errorIsActive: _errorIsActivated,
-          callBack: (value) {
-            _distanceCalibration = value;
+          callBack: (response) {
+            if(_distanceCalibration["phase"] == CurrentPhase.wait) {
+              if(!waitingTimerStarted) {
+                MoveFaceOnMedianPlane().countDownWaitingProcess(
+                  callBack: (int second) {
+                    _distanceCalibration["waitingTime"] = second;
+                    if(second == MoveFaceOnMedianPlane.waitingTime) {
+                      _distanceCalibration["phase"] = CurrentPhase.endCalibration;
+                    }
+                  }
+                );
+                waitingTimerStarted = true;
+              }
+            } else {
+              _distanceCalibration = response;
+            }
           }
         );
 
@@ -218,6 +251,36 @@ class _BiometricVerificationState extends State<BiometricVerification> {
         if(faces.length > 1) {
           errorActivator(error: true, text: "Make sure only you are visible in the view");
         }
+
+        BiometricValidation().eyeOpen(
+          right: _rightEyeOpenProbability ?? 0.0,
+          left: _leftEyeOpenProbability ?? 0.0,
+          callBack: (response) {
+            if(response["error"] == true) {
+              /** Checking if user keeping eyes closed */
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if(!(_rightEyeOpenProbability! > 0.85 && _leftEyeOpenProbability! > 0.85)) {
+                  errorActivator(error: true, text: response["text"]);
+                } else {
+                  errorActivator(error: false, text: response["text"]);
+                }
+              });
+            }
+          },
+        );
+
+        FraudValidation().getDeviation(
+          dataSet: eyesMovingDataSet,
+          callBack: (double deviation) {
+            eyeMovingDeviation = deviation;
+          }
+        );
+        FraudValidation().getDeviation(
+            dataSet: headZPosDataSet,
+            callBack: (double deviation) {
+              headZPosDeviation = deviation;
+            }
+        );
 
         // /** Check mobile attack suspect */
         // if(_mobileAttackSuspectConfidence > 0.30 && _mobileAttackSuspectConfidence < 0.65) {
@@ -255,6 +318,8 @@ class _BiometricVerificationState extends State<BiometricVerification> {
     _canProcess = false;
     _faceDetector.close();
     _imageLabeler.close();
+    eyesMovingDataSet.clear();
+    headZPosDataSet.clear();
     super.dispose();
   }
 }

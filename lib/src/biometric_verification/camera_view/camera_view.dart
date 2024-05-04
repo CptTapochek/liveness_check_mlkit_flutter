@@ -9,7 +9,9 @@ import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/c
 import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/inform_label.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/inform_speaker.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/progress_bar.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/timer_label.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/debug_data_view.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/components/processes/move_face_on_median_plane.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/real_time_graph.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/utilities.dart';
 import 'package:next_vision_flutter_app/src/components/custom_error_widget.dart';
@@ -28,7 +30,7 @@ class CameraView extends StatefulWidget {
     required this.distanceCalibration,
     this.error = false,
     this.errorText = "",
-    required this.eyesOpenProbability,
+    this.graphData = 0.0,
   }) : super(key: key);
   final Function(InputImage inputImage) onImage;
   final CameraLensDirection initialDirection;
@@ -38,7 +40,7 @@ class CameraView extends StatefulWidget {
   final List debugValuesList;
   final CustomPaint? customPaint;
   final Map distanceCalibration;
-  final double eyesOpenProbability;
+  final double graphData;
 
   @override
   State<CameraView> createState() => _CameraViewState();
@@ -118,7 +120,7 @@ class _CameraViewState extends State<CameraView> {
               bottom: MediaQuery.of(context).padding.bottom,
               width: const AppSize().screenW(),
               height: const AppSize().flex(100),
-              child: RealTimeGraphCustom(data: widget.eyesOpenProbability),
+              child: RealTimeGraphCustom(data: widget.graphData),
             ),
           if(widget.debugMode)
             Positioned(
@@ -146,15 +148,21 @@ class _CameraViewState extends State<CameraView> {
           Positioned(
             top: MediaQuery.of(context).padding.top + const AppSize().screenW() * 1.2 + const AppSize().flex(40),
             child: InformLabel(
-              text: widget.error ? widget.errorText : widget.distanceCalibration["text"],
+              text: widget.error ? widget.errorText : widget.distanceCalibration["text"] ?? "",
               errorActive: widget.error
             ),
           ),
           /** Progress bar */
-          Positioned(
-            top: MediaQuery.of(context).padding.top + const AppSize().screenW() * 1.2 + const AppSize().flex(110),
-            child: ProgressBar(progress: widget.distanceCalibration["progress"], errorActive: widget.error)
-          )
+          if(widget.distanceCalibration["progressIndicator"] == true)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + const AppSize().screenW() * 1.2 + const AppSize().flex(110),
+              child: ProgressBar(progress: widget.distanceCalibration["progress"], errorActive: widget.error)
+            ),
+          if(widget.distanceCalibration["phase"] == CurrentPhase.wait)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + const AppSize().flex(30) + const AppSize().screenW() * 0.5,
+              child: TimerLabel(second: widget.distanceCalibration["waitingTime"] ?? 0)
+            )
         ],
       )
     );

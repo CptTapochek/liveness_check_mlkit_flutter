@@ -13,14 +13,14 @@ class RealTimeGraphCustom extends StatefulWidget {
 }
 
 class _RealTimeGraphCustomState extends State<RealTimeGraphCustom> {
+  Stream<double> positiveDataStream() {
+    return Stream.periodic(const Duration(milliseconds: 50), (_) {
+      return double.parse((widget.data * 100).toStringAsFixed(1));
+    }).asBroadcastStream();
+  }
+
   @override
   Widget build(BuildContext context) {
-    Stream<double> positiveDataStream() {
-      return Stream.periodic(const Duration(milliseconds: 50), (_) {
-        return double.parse((widget.data * 100).toStringAsFixed(1));
-      }).asBroadcastStream();
-    }
-
     return RealTimeGraph(
       stream: positiveDataStream(),
       // supportNegativeValuesDisplay: true,

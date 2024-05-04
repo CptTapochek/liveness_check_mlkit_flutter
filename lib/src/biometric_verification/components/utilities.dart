@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:next_vision_flutter_app/main.dart';
 import 'dart:developer';
-
 import 'package:permission_handler/permission_handler.dart';
 
 
