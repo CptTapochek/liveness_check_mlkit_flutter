@@ -15,15 +15,25 @@ class BiometricValidation {
     "minX": -20, "maxX": 25, "minY": -25, "maxY": 25, "minZ": -15, "maxZ": 15,
   };
 
-  void headPosition({required double posX, required double posZ, required double posY, required Function callBack}) {
+  void headPosition({required double posX, required double posZ, required double posY, required Function callBack, required bool turnHeadPhase}) {
     bool existError = true;
-    if((posX >= headRange["minX"] && posX <= headRange["maxX"]) && (posZ >= headRange["minZ"] && posZ <= headRange["maxZ"]) && (posY >= headRange["minY"] && posY <= headRange["maxY"])) {
-      /* Success position */
-      existError = false;
+    String errorText = "";
+    if(turnHeadPhase) {
+      if((posX >= headRange["minX"] && posX <= headRange["maxX"]) && (posZ >= headRange["minZ"] && posZ <= headRange["maxZ"])) {
+        existError = false; // Success position
+      } else {
+        errorText = "Wrong direction";
+      }
+    } else {
+      if((posX >= headRange["minX"] && posX <= headRange["maxX"]) && (posZ >= headRange["minZ"] && posZ <= headRange["maxZ"]) && (posY >= headRange["minY"] && posY <= headRange["maxY"])) {
+        existError = false; // Success position
+      } else {
+        errorText = "Keep your head straight and look directly into the camera";
+      }
     }
     callBack({
       "error": existError,
-      "text": "Keep your head straight and look directly into the camera"
+      "text": errorText
     });
   }
 

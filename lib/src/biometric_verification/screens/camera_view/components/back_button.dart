@@ -5,12 +5,14 @@ import 'package:next_vision_flutter_app/src/constants/size.dart';
 class CameraViewBackButton extends StatelessWidget {
   const CameraViewBackButton({
     Key? key,
+    required this.callBack,
   }) : super(key: key);
+  final Function callBack;
 
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      onPressed: () => Navigator.pop(context),
+      onPressed: () => callBack(),
       style: ButtonStyle(
         overlayColor: MaterialStateProperty.all(Colors.transparent),
       ),

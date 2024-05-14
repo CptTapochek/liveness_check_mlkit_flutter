@@ -3,17 +3,19 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:next_vision_flutter_app/main.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/back_button.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/display_preview.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/face_preview_zone.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/inform_label.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/inform_speaker.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/progress_bar.dart';
-import 'package:next_vision_flutter_app/src/biometric_verification/camera_view/components/timer_label.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/back_button.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/color_changing.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/display_preview.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/face_preview_zone.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/inform_label.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/inform_speaker.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/progress_bar.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/timer_label.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/debug_data_view.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/processes/move_face_on_median_plane.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/real_time_graph.dart';
 import 'package:next_vision_flutter_app/src/biometric_verification/components/utilities.dart';
+import 'package:next_vision_flutter_app/src/biometric_verification/screens/camera_view/components/turn_head_arrows.dart';
 import 'package:next_vision_flutter_app/src/components/custom_error_widget.dart';
 import 'package:next_vision_flutter_app/src/constants/size.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
@@ -24,6 +26,7 @@ class CameraView extends StatefulWidget {
     Key? key,
     required this.onImage,
     required this.customPaint,
+    required this.rootWidget,
     this.initialDirection = CameraLensDirection.back,
     this.debugMode = false,
     this.debugValuesList = const [{"title": "characteristic title", "value": "characteristic value"}],
@@ -31,9 +34,11 @@ class CameraView extends StatefulWidget {
     this.error = false,
     this.errorText = "",
     this.graphData = 0.0,
+    required this.fraudDetected,
   }) : super(key: key);
   final Function(InputImage inputImage) onImage;
   final CameraLensDirection initialDirection;
+  final Widget rootWidget;
   final bool debugMode;
   final bool error;
   final String errorText;
@@ -41,6 +46,7 @@ class CameraView extends StatefulWidget {
   final CustomPaint? customPaint;
   final Map distanceCalibration;
   final double graphData;
+  final bool fraudDetected;
 
   @override
   State<CameraView> createState() => _CameraViewState();
@@ -97,13 +103,18 @@ class _CameraViewState extends State<CameraView> {
       return const CustomErrorWidget();
     }
 
+    if(widget.fraudDetected) {
+      _stopLiveFeed();
+    }
+
     return Container(
       color: Colors.black,
       child: Stack(
         alignment: Alignment.center,
         fit: StackFit.expand,
         children: <Widget>[
-          DisplayPreview(cameraController: _cameraController),
+          if(!widget.fraudDetected)
+            DisplayPreview(cameraController: _cameraController),
           FacePreviewZone(error: widget.error, distanceCalibration: widget.distanceCalibration),
           /** This positioned bloc is using for debugging */
           if (widget.debugMode && widget.customPaint != null)
@@ -132,11 +143,16 @@ class _CameraViewState extends State<CameraView> {
                 }
               ),
             ),
+          /** Changing colors theme */
+          if(widget.distanceCalibration["phase"] == CurrentPhase.wait)
+            const Positioned(child: ColorChanging()),
           /** Back button */
           Positioned(
             top: MediaQuery.of(context).padding.top + const AppSize().flex(10),
             left: const AppSize().flex(5),
-            child: const CameraViewBackButton(),
+            child: CameraViewBackButton(
+              callBack: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => widget.rootWidget), (route) => false),
+            ),
           ),
           /** Speaker */
           Positioned(
@@ -152,6 +168,14 @@ class _CameraViewState extends State<CameraView> {
               errorActive: widget.error
             ),
           ),
+          /** Animated arrows direction */
+          if(widget.distanceCalibration["phase"] == CurrentPhase.turnHead)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + const AppSize().screenW() * 0.4,
+              child: TurnHeadArrows(
+                turnDirection: widget.distanceCalibration["lookDirection"],
+              )
+            ),
           /** Progress bar */
           if(widget.distanceCalibration["progressIndicator"] == true)
             Positioned(
@@ -162,7 +186,7 @@ class _CameraViewState extends State<CameraView> {
             Positioned(
               top: MediaQuery.of(context).padding.top + const AppSize().flex(30) + const AppSize().screenW() * 0.5,
               child: TimerLabel(second: widget.distanceCalibration["waitingTime"] ?? 0)
-            )
+            ),
         ],
       )
     );
